@@ -1,0 +1,26 @@
+# 免费定时采集：GitHub Actions 每天跑一次采集器写入 Supabase。
+# 免费额度：公开仓库无限分钟；私有仓库每月 2000 分钟，足够每天跑。
+# cron 最小间隔 5 分钟，且可能延迟几分钟执行（GitHub 队列调度，正常现象）。
+name: collect-leads
+
+on:
+  schedule:
+    - cron: "0 1 * * *"   # 每天 UTC 01:00 ≈ 北京时间 09:00
+  workflow_dispatch: {}    # 支持手动触发
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: pip install -r collector/requirements.txt
+      - name: Run collector
+        working-directory: collector
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python run.py

@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "招商线索",
+    "slug": "qcc-leads",
+    "scheme": "qccleads",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "platforms": ["ios", "android"],
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.qcc.leads" },
+    "android": { "package": "com.qcc.leads" },
+    "plugins": ["expo-router", "expo-notifications"],
+    "extra": {
+      "supabaseUrl": "https://YOUR-PROJECT.supabase.co",
+      "supabaseAnonKey": "YOUR-ANON-KEY"
+    }
+  }
+}

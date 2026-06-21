@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Node / Expo
+app/node_modules/
+app/.expo/
+app/dist/
+*.log
+
+# 本地密钥，永不入库
+*.local
+.env.*
