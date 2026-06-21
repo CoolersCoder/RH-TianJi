@@ -11,6 +11,7 @@ on:
 jobs:
   collect:
     runs-on: ubuntu-latest
+    timeout-minutes: 45      # 兜底:防极端跑飞(实测约 39 分钟;关掉 ccgp 后可下调)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
