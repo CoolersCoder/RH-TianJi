@@ -10,18 +10,15 @@ import hashlib
 import re
 
 from config import (
-    CHANGSANJIAO_CITIES,
-    CHANGSANJIAO_PROVINCES,
+    CITY_PROV,
+    PROVINCES,
     EVENT_RULES,
     INDUSTRY_KEYWORDS,
 )
 
-_CITY_TO_PROV = {
-    "上海": "上海",
-    **{c: "江苏" for c in ["南京","苏州","无锡","常州","南通","徐州","盐城","扬州","镇江","泰州","淮安","连云港","宿迁"]},
-    **{c: "浙江" for c in ["杭州","宁波","温州","嘉兴","湖州","绍兴","金华","衢州","舟山","台州","丽水"]},
-    **{c: "安徽" for c in ["合肥","芜湖","蚌埠","马鞍山","滁州","安庆","宣城","铜陵","六安","宿州","阜阳","亳州","池州","黄山","淮南","淮北"]},
-}
+_PROV_SET = set(PROVINCES)
+# 城市键(排除省名本身);市级优先于省级识别,拿到更具体的落地城市
+_CITIES = [c for c in CITY_PROV if c not in _PROV_SET]
 
 # 金额：总投资12.5亿元 / 投资约3亿 / 5000万元
 _AMT_YI  = re.compile(r"(?:总投资|拟投资|投资|金额|中标价)[约为：:\s]*([\d.]+)\s*亿")
@@ -66,10 +63,10 @@ _LOC_NOISE = [
 def extract_location(text: str):
     for noise in _LOC_NOISE:
         text = text.replace(noise, "")
-    for city in CHANGSANJIAO_CITIES:
+    for city in _CITIES:               # 市级优先(更具体)
         if city in text:
-            return _CITY_TO_PROV.get(city, ""), city
-    for prov in CHANGSANJIAO_PROVINCES:
+            return CITY_PROV[city], city
+    for prov in PROVINCES:             # 再退到省级
         if prov in text:
             return prov, ""
     return "", ""
@@ -124,13 +121,14 @@ def build_signal(item: dict) -> dict:
 
 
 def in_scope(sig: dict) -> bool:
-    """招商是地域性工作：必须命中长三角地域，行业(新能源/新材料)作为加分标签。
+    """全国 + 高新技术:命中高新技术行业 = 入库闸门(只收高新科技,滤掉房地产/基建/传统贸易);
+    地域全国一视同仁,只作标签不再作闸门。
 
-    代价：标题里没提城市的长三角企业(如恒逸石化)会被漏掉——这是免费模式没有
-    「企业→注册地」映射的固有局限，Phase 2 接实体归一后可召回。宁缺毋滥优先。
+    代价：标题/企业名里没出现行业关键词的真高新企业会被漏(免费模式无「企业→行业」库),
+    宁缺毋滥优先；待接实体/行业归一后可召回。
     """
     name = sig.get("company_key") or ""
     # 含数字的简称基本是债券/特殊证券(如"23浙建02")，不是企业主体，剔除。
     has_company = bool(name) and not any(ch.isdigit() for ch in name)
-    geo = bool(sig.get("location_prov"))
-    return has_company and geo
+    is_hightech = sig.get("industry") is not None
+    return has_company and is_hightech

@@ -44,16 +44,18 @@ def collect() -> list[dict]:
         polite.nap(config)
     polite.source_pause(config)
 
-    # 源2：中国政府采购网(独立信源 → 触发交叉验证)。境外IP会被限频，失败不影响源1。
-    try:
-        combos = [(kw, prov) for kw in config.CCGP_SEARCH_KEYWORDS
-                  for prov in config.CHANGSANJIAO_PROVINCES]
-        random.shuffle(combos)
-        for kw, prov in combos:
-            _ingest(ccgp.search(kw, prov, config.LOOKBACK_DAYS, config.MAX_PAGES_PER_KEYWORD), seen_hash, signals)
-            polite.nap(config)
-    except Exception as e:  # noqa: BLE001
-        print(f"[run] 政府采购源整体跳过: {e}")
+    # 源2：中国政府采购网。境外IP被限频、0 产出、空等约 25 分钟,默认关闭(境内 IP 可在 config 打开)。
+    if getattr(config, "ENABLE_CCGP", False):
+        polite.source_pause(config)
+        try:
+            combos = [(kw, prov) for kw in config.CCGP_SEARCH_KEYWORDS
+                      for prov in config.CHANGSANJIAO_PROVINCES]
+            random.shuffle(combos)
+            for kw, prov in combos:
+                _ingest(ccgp.search(kw, prov, config.LOOKBACK_DAYS, config.MAX_PAGES_PER_KEYWORD), seen_hash, signals)
+                polite.nap(config)
+        except Exception as e:  # noqa: BLE001
+            print(f"[run] 政府采购源整体跳过: {e}")
 
     # 源3：环评公示(上海生态环境局)。**境外可达的真·第二信源**，与巨潮独立 → 交叉验证。
     if getattr(config, "ENABLE_EIA", True):
