@@ -22,10 +22,30 @@
     </div>
 
     <div class="relative z-10 px-6 pb-12">
-      <a href="index.html" class="block w-full text-center font-label-caps" style="background:#c8372d;color:#fff;padding:15px 0;border-radius:12px;font-size:15px;font-weight:600;letter-spacing:0.2em">进 入</a>
-      <div class="mt-4 text-center font-label-caps" style="color:#5b6573;font-size:11px;letter-spacing:0.2em">INTELLIGENCE TERMINAL · v1.0</div>
+      <input id="pw" type="password" placeholder="输入访问密码" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')enter()"
+        class="w-full text-center mb-3" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);color:#f2f4f7;padding:13px 0;border-radius:12px;font-size:15px;letter-spacing:0.1em;outline:none"/>
+      <button onclick="enter()" class="block w-full text-center font-label-caps" style="background:#c8372d;color:#fff;padding:15px 0;border-radius:12px;font-size:15px;font-weight:600;letter-spacing:0.2em;border:none;cursor:pointer">进 入</button>
+      <div id="pwerr" class="mt-3 text-center" style="color:#c8372d;font-size:12px;height:16px"></div>
+      <div class="mt-1 text-center font-label-caps" style="color:#5b6573;font-size:11px;letter-spacing:0.2em">INTELLIGENCE TERMINAL · v1.0</div>
     </div>
   </div>
 </div>
+<script>
+  const ACCESS_PASSWORD = "huying";   // 默认访问密码(改这里即可)
+  function enter() {
+    const v = (document.getElementById("pw").value || "").trim();
+    if (v === ACCESS_PASSWORD) {
+      localStorage.setItem("xianji_auth", "1");
+      // 首次(未设置关注偏好)→ 走引导选省份/行业;之后 → 直接进首页
+      location.href = localStorage.getItem("xianji_prefs") ? "index.html" : "onboarding.html";
+    } else {
+      document.getElementById("pwerr").textContent = "密码不对,再试试";
+      document.getElementById("pw").value = "";
+      document.getElementById("pw").focus();
+    }
+  }
+  document.getElementById("pw").focus();
+</script>
 </body>
 </html>

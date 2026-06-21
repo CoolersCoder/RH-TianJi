@@ -1,14 +1,14 @@
 {
   "expo": {
     "name": "招商线索",
-    "slug": "qcc-leads",
-    "scheme": "qccleads",
+    "slug": "rh-tianji-leads",
+    "scheme": "rhtianji",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "platforms": ["ios", "android"],
-    "ios": { "supportsTablet": true, "bundleIdentifier": "com.qcc.leads" },
-    "android": { "package": "com.qcc.leads" },
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.rhtianji.leads" },
+    "android": { "package": "com.rhtianji.leads" },
     "plugins": ["expo-router", "expo-notifications"],
     "extra": {
       "supabaseUrl": "https://ajnwlvbrhytbipjgmbpv.supabase.co",

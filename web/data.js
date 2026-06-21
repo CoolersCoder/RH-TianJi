@@ -1,3 +1,9 @@
+// 访问门:没在 splash 输过密码的,弹回 splash。各 app 页都引了 data.js,故守卫集中放这。
+// 注意:这是「软门」——挡住随手浏览,但不是真安全(密码在前端源码可见,数据本就公开只读)。
+if (localStorage.getItem("xianji_auth") !== "1") {
+  location.replace("splash.html");
+}
+
 // 先机 · 数据层：浏览器直连 Supabase REST(publishable key 只读，受 RLS 保护，可安全放前端)。
 const SUPABASE_URL = "https://ajnwlvbrhytbipjgmbpv.supabase.co";
 const SUPABASE_ANON = "sb_publishable_hUBM2xQ00HBk_obzou0ozQ_NQiEobvT";
