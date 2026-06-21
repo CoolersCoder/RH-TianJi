@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#f2f4f7"/>
+<title>先机 · 首次设置</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="theme.css"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"/>
+</head>
+<body class="bg-background text-on-surface antialiased">
+<div class="max-w-[440px] mx-auto w-full min-h-screen flex flex-col">
+
+  <header class="flex items-center justify-between px-margin-mobile pt-6 pb-2">
+    <span class="text-[11px] font-label-caps text-rock">首次设置</span>
+    <div class="flex items-center gap-1.5">
+      <span id="dot0" class="w-6 h-1.5 rounded-full bg-primary"></span>
+      <span id="dot1" class="w-6 h-1.5 rounded-full bg-surface-variant"></span>
+    </div>
+  </header>
+
+  <main class="px-margin-mobile pt-4 flex-1">
+    <h1 id="h" class="font-display-lg text-on-surface mb-2">选关注省份</h1>
+    <p id="sub" class="text-body-md text-rock mb-7">多选。沪苏浙皖默认已选，可随时调整。</p>
+    <div id="pills" class="flex flex-wrap gap-2.5"></div>
+  </main>
+
+  <div class="px-6 pb-10 pt-4">
+    <button id="next" onclick="next()" class="block w-full text-center font-label-caps text-white py-4 rounded-xl" style="background:#c8372d;letter-spacing:.2em;font-size:15px;font-weight:600">下 一 步</button>
+  </div>
+</div>
+
+<script>
+  const PROV = ["上海", "江苏", "浙江", "安徽", "山东", "广东", "福建", "北京"];
+  const IND = ["新能源", "新材料", "高端装备", "生物医药", "集成电路", "节能环保"];
+  const sel = { prov: new Set(["上海", "江苏", "浙江", "安徽"]), ind: new Set(["新能源", "新材料"]) };
+  let step = 0;
+
+  function pill(label, on) {
+    return `<button data-v="${label}" onclick="toggle('${label}')" class="px-4 py-2 rounded-full text-[14px] font-medium transition-colors ${
+      on ? "bg-primary-soft text-primary border border-primary" : "bg-surface text-on-surface border-hairline"}">${label}</button>`;
+  }
+  function curSet() { return step === 0 ? sel.prov : sel.ind; }
+  function render() {
+    const items = step === 0 ? PROV : IND, set = curSet();
+    document.getElementById("h").textContent = step === 0 ? "选关注省份" : "选关注行业";
+    document.getElementById("sub").textContent = step === 0
+      ? "多选。沪苏浙皖默认已选，可随时调整。"
+      : "多选。新能源 / 新材料默认已选，决定线索流的行业范围。";
+    document.getElementById("pills").innerHTML = items.map(x => pill(x, set.has(x))).join("");
+    document.getElementById("dot0").className = `w-6 h-1.5 rounded-full ${step >= 0 ? "bg-primary" : "bg-surface-variant"}`;
+    document.getElementById("dot1").className = `w-6 h-1.5 rounded-full ${step >= 1 ? "bg-primary" : "bg-surface-variant"}`;
+    document.getElementById("next").textContent = step === 0 ? "下 一 步" : "完 成 · 进 入";
+  }
+  function toggle(v) { const s = curSet(); s.has(v) ? s.delete(v) : s.add(v); render(); }
+  function next() {
+    if (step === 0) { step = 1; render(); return; }
+    localStorage.setItem("xianji_prefs", JSON.stringify({ prov: [...sel.prov], ind: [...sel.ind] }));
+    location.href = "index.html";
+  }
+  render();
+</script>
+</body>
+</html>

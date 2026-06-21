@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime, timezone
 
 import httpx
 
@@ -50,12 +51,13 @@ def upsert_signals(rows: list[dict]) -> int:
 def upsert_leads(rows: list[dict]) -> int:
     if not rows:
         return 0
+    ts = datetime.now(timezone.utc).isoformat()  # PostgREST 不会执行 now()，得给真实时间戳
     with httpx.Client(timeout=30.0) as client:
         for batch in _chunk(rows):
             r = client.post(
                 f"{URL}/rest/v1/leads?on_conflict=company_key",
                 headers=_headers({"Prefer": "resolution=merge-duplicates,return=minimal"}),
-                json=[{**b, "updated_at": "now()"} for b in batch],
+                json=[{**b, "updated_at": ts} for b in batch],
             )
             r.raise_for_status()
     return len(rows)

@@ -11,8 +11,8 @@
     "android": { "package": "com.qcc.leads" },
     "plugins": ["expo-router", "expo-notifications"],
     "extra": {
-      "supabaseUrl": "https://YOUR-PROJECT.supabase.co",
-      "supabaseAnonKey": "YOUR-ANON-KEY"
+      "supabaseUrl": "https://ajnwlvbrhytbipjgmbpv.supabase.co",
+      "supabaseAnonKey": "sb_publishable_hUBM2xQ00HBk_obzou0ozQ_NQiEobvT"
     }
   }
 }

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#f2f4f7"/>
+<title>先机 · 关注</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="theme.css"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"/>
+</head>
+<body class="bg-background text-on-surface antialiased pb-28">
+<div class="max-w-[480px] mx-auto w-full min-h-screen">
+
+  <header class="px-margin-mobile pt-7 pb-3">
+    <h1 class="font-display-lg text-on-surface">关注</h1>
+  </header>
+
+  <main class="px-margin-mobile">
+    <!-- 清单 / 看板 分段 -->
+    <div class="bg-surface-container rounded-xl p-1 flex mb-5 border-hairline">
+      <button id="tab0" onclick="setView(0)" class="flex-1 py-2 rounded-lg text-[13px] font-medium transition-colors">清单</button>
+      <button id="tab1" onclick="setView(1)" class="flex-1 py-2 rounded-lg text-[13px] font-medium transition-colors">看板</button>
+    </div>
+    <div id="list" class="flex flex-col gap-3"></div>
+    <div id="state" class="text-center text-rock py-16 text-body-md leading-relaxed"></div>
+  </main>
+</div>
+<div id="nav"></div>
+
+<script src="data.js"></script>
+<script>
+  document.getElementById("nav").innerHTML = bottomNav("follow.html");
+  const STAGE_COLOR = { "待联系": "brass", "已联系": "jade", "已对接": "jade", "已签约": "primary", "已搁置": "rock" };
+  let view = 0;
+
+  function stageSelect(x) {
+    const opts = STAGES.map(s => `<option ${s === x.stage ? "selected" : ""}>${s}</option>`).join("");
+    const c = STAGE_COLOR[x.stage] || "rock";
+    return `<select onchange="setStage('${x.company_key.replace(/'/g, "")}', this.value); render()"
+      class="text-[11px] font-medium rounded-full px-2.5 py-1 bg-surface border border-${c} text-${c} flex-shrink-0">${opts}</select>`;
+  }
+  function richCard(x) {
+    const m = scoreMeta(x.intent_score);
+    return `<div class="bg-surface border-hairline card-soft rounded-2xl flex overflow-hidden">
+      <div class="flex flex-col items-center justify-center w-[64px] flex-shrink-0 py-4 border-r-hairline">
+        <span class="font-data-mono text-[24px] font-bold text-${m.color} leading-none">${x.intent_score}</span>
+        <span class="text-[10px] mt-1 text-${m.color}">${m.status}</span>
+      </div>
+      <div class="flex-1 min-w-0 p-4">
+        <div class="flex items-start justify-between gap-2">
+          <div class="font-headline-sm font-semibold truncate cursor-pointer" onclick="location.href='lead.html?key=${encodeURIComponent(x.company_key)}'">${x.company_name}</div>
+          ${stageSelect(x)}
+        </div>
+        <div class="text-[12px] text-rock mt-1 truncate">${[x.top_industry, x.top_location].filter(Boolean).join(" · ") || "—"}</div>
+      </div>
+    </div>`;
+  }
+  function render() {
+    const w = getWatch(), list = document.getElementById("list"), state = document.getElementById("state");
+    document.getElementById("tab0").className = `flex-1 py-2 rounded-lg text-[13px] font-medium transition-colors ${view === 0 ? "bg-surface text-on-surface card-soft" : "text-rock"}`;
+    document.getElementById("tab1").className = `flex-1 py-2 rounded-lg text-[13px] font-medium transition-colors ${view === 1 ? "bg-surface text-on-surface card-soft" : "text-rock"}`;
+    if (!w.length) { list.innerHTML = ""; state.innerHTML = "还没有跟进中的线索。<br>在情报档案页点「加入跟进」把企业放进来。"; return; }
+    state.textContent = "";
+    if (view === 0) {
+      list.innerHTML = w.map(richCard).join("");
+    } else {
+      // 看板：按阶段分组
+      list.innerHTML = STAGES.map(stage => {
+        const items = w.filter(x => x.stage === stage);
+        if (!items.length) return "";
+        const c = STAGE_COLOR[stage];
+        return `<div class="mb-2">
+          <div class="flex items-center gap-2 mb-2"><span class="w-1.5 h-1.5 rounded-full bg-${c}"></span>
+            <span class="text-[11px] font-label-caps text-rock">${stage}</span>
+            <span class="text-[11px] font-data-mono text-rock/60">${items.length}</span></div>
+          <div class="flex flex-col gap-2">${items.map(x => compactRow({
+            company_key: x.company_key, company_name: x.company_name, intent_score: x.intent_score,
+            top_location: x.top_location, top_industry: x.top_industry,
+          })).join("")}</div></div>`;
+      }).join("");
+    }
+  }
+  function setView(v) { view = v; render(); }
+  render();
+</script>
+</body>
+</html>

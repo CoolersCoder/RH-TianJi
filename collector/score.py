@@ -13,6 +13,7 @@ EVENT_WEIGHTS = {
     "招标采购": 1.0,
     "投资备案": 0.9,
     "新建项目": 0.9,
+    "环评公示": 0.85,   # 新建/扩建项目动工前的环评申报,领先信号(略低于备案)
     "对外投资": 0.6,
     "选址签约": 0.6,
     "扩产":     0.5,
@@ -41,6 +42,14 @@ def _multiplier(distinct_sources: int) -> float:
     if distinct_sources == 2:
         return 1.4
     return 1.0
+
+
+def _loc_label(prov: str | None, city: str | None) -> str:
+    """干净的地点串：有市取市(最具体,如 常州/淮安);否则取省;直辖市不重复(不再'上海上海')。"""
+    p, c = (prov or "").strip(), (city or "").strip()
+    if c and c != p:
+        return c
+    return p or c
 
 
 def _status(score: int) -> str:
@@ -83,7 +92,7 @@ def aggregate(signals: list[dict], today: date | None = None) -> list[dict]:
         amounts = [s["amount_wan"] for s in unique if s.get("amount_wan")]
         industries = [s["industry"] for s in unique if s.get("industry")]
         locations = [
-            f"{s.get('location_prov','')}{s.get('location_city','')}"
+            _loc_label(s.get("location_prov"), s.get("location_city"))
             for s in unique
             if s.get("location_prov") or s.get("location_city")
         ]

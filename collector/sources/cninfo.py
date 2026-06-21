@@ -1,31 +1,16 @@
-"""巨潮资讯网(cninfo) 上市公司公告采集器 —— P0 数据源。
+"""巨潮资讯网(cninfo) 上市公司公告采集器 —— P0 数据源(免费、结构规整、几乎无反爬)。
 
-为什么先做它：免费、结构规整、几乎无反爬，是练通整条 pipeline 的最佳起点。
-用的是公开的全文检索接口 fulltextSearch/full，按关键词("对外投资/新建项目/扩产"…)拉公告。
-
-注意：cninfo 是境内站点，本机(海外CI)直连可能超时；正式运行在 GitHub Actions 上
-更稳。接口字段以线上实际返回为准，若改版需按返回结构微调 parse。
+用公开全文检索接口 fulltextSearch/full，按关键词拉公告。礼貌采集：慢、随机停顿(见 polite)。
 """
 from __future__ import annotations
 
 import re
-import time
 from datetime import datetime, timedelta
 
-import httpx
+import config
+import polite
 
 FULLTEXT_URL = "http://www.cninfo.com.cn/new/fulltextSearch/full"
-
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-    ),
-    "Accept": "application/json, text/plain, */*",
-    "Referer": "http://www.cninfo.com.cn/new/fulltextSearch",
-    "X-Requested-With": "XMLHttpRequest",
-}
-
 _EM = re.compile(r"</?em>")  # 接口会把命中关键词包在 <em> 里
 
 
@@ -33,11 +18,15 @@ def _clean(s: str | None) -> str:
     return _EM.sub("", s or "").strip()
 
 
-def search(keyword: str, lookback_days: int, max_pages: int, delay: float):
+def search(keyword: str, lookback_days: int, max_pages: int):
     """按关键词全文检索公告，yield 规整后的 dict。"""
     edate = datetime.now().date()
     sdate = edate - timedelta(days=lookback_days)
-    with httpx.Client(headers=HEADERS, timeout=20.0) as client:
+    with polite.client(
+        "http://www.cninfo.com.cn/new/fulltextSearch",
+        timeout=20.0,
+        extra_headers={"Accept": "application/json, text/plain, */*", "X-Requested-With": "XMLHttpRequest"},
+    ) as client:
         for page in range(1, max_pages + 1):
             params = {
                 "searchkey": keyword,
@@ -78,4 +67,4 @@ def search(keyword: str, lookback_days: int, max_pages: int, delay: float):
                     "sec_code": a.get("secCode"),
                     "matched_keyword": keyword,
                 }
-            time.sleep(delay)
+            polite.nap(config)  # 慢、随机停顿

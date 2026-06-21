@@ -1,0 +1,48 @@
+/* 先机 · 全局样式 —— 对齐 invest-cue 参考站 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+body {
+  font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: #f2f4f7;
+  color: #11161c;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+.font-headline-md, .font-headline-sm, .font-display-lg { font-family: "Noto Serif SC", serif; font-feature-settings: "palt" on; }
+.font-data-mono, .font-label-caps { font-family: "JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+.material-symbols-outlined { font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24; }
+
+/* 发丝描边(卡片与分隔的主要手段) */
+.border-hairline   { border: 1px solid #e2e6eb; }
+.border-b-hairline { border-bottom: 1px solid #e2e6eb; }
+.border-r-hairline { border-right: 1px solid #e2e6eb; }
+
+/* 白卡统一阴影(浮在浅灰底上) */
+.card-soft { box-shadow: 0 1px 2px rgba(17,22,28,.04), 0 1px 3px rgba(17,22,28,.03); }
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ——— 暗色 splash(情报终端入场)——— */
+.splash-bg { background:#0b0e12; }
+.splash-panel { background:#11161c; }
+.splash-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: .06;
+}
+.scan-line {
+  position:absolute; left:0; right:0; height:1px;
+  background:linear-gradient(90deg, transparent, rgba(176,125,43,.55), transparent);
+  box-shadow:0 0 24px 2px rgba(176,125,43,.25);
+  animation: scanline 5s ease-in-out infinite;
+}
+@keyframes scanline {
+  0%   { top: 8%;  opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { top: 92%; opacity: 0; }
+}

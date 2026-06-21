@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#11161c"/>
+<title>先机 · 情报档案</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="theme.css"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"/>
+</head>
+<body class="bg-background text-on-surface antialiased pb-28">
+<div class="max-w-[480px] mx-auto w-full min-h-screen bg-surface">
+
+  <header class="grid grid-cols-[40px_1fr_40px] items-center px-margin-mobile h-14 w-full sticky top-0 z-40 bg-surface/90 backdrop-blur border-b-hairline">
+    <button onclick="history.back()" class="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-rock"><span class="material-symbols-outlined">arrow_back</span></button>
+    <span class="text-center font-headline-sm font-semibold text-on-surface">情报档案</span>
+    <button onclick="if(navigator.share&&window.__lead)navigator.share({title:window.__lead.company_name,url:location.href})" class="w-9 h-9 ml-auto rounded-full flex items-center justify-center text-rock"><span class="material-symbols-outlined text-[20px]">ios_share</span></button>
+  </header>
+
+  <main id="root">
+    <div id="state" class="text-center text-rock py-20 text-body-md">加载中…</div>
+  </main>
+</div>
+
+<script src="data.js"></script>
+<script>
+  const key = new URLSearchParams(location.search).get("key");
+
+  function hero(l) {
+    const m = scoreMeta(l.intent_score);
+    const chips = [l.top_industry, l.top_location].filter(Boolean)
+      .map(t => `<span class="px-2.5 py-1 bg-white/10 rounded-md text-[12px] text-white/90">${t}</span>`).join("");
+    const scoreColor = m.color === "rock" ? "text-white" : "text-" + m.color;
+    return `
+    <div class="splash-panel text-white px-margin-mobile pt-6 pb-7">
+      <h2 class="font-display-lg text-white mb-2 leading-tight">${l.company_name}</h2>
+      <div class="font-data-mono text-[12px] text-white/45 mb-4">${l.uscc || "统一社会信用代码 · 待补全"}</div>
+      <div class="flex gap-2 mb-6">${chips}</div>
+      <div class="flex items-end gap-3">
+        <span class="text-[56px] leading-none font-data-mono font-bold ${scoreColor}">${l.intent_score}</span>
+        <span class="text-[12px] mb-2 px-2.5 py-1 rounded-md ${m.pill}">${m.status}</span>
+      </div>
+      <div class="font-label-caps text-white/35 mt-2">INTENT SCORE · 意向强度</div>
+    </div>`;
+  }
+
+  function verification(l, signals) {
+    const types = [...new Set(signals.map(s => s.source_type))];
+    const badges = types.map(t => {
+      const s = SOURCE_LABEL[t] || { t, icon: "description" };
+      const tint = SOURCE_TINT[t] || "bg-surface-variant text-rock";
+      return `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[12px] ${tint}"><span class="material-symbols-outlined text-[14px]">${s.icon}</span>${s.t}</span>`;
+    }).join("");
+    const seal = l.distinct_sources >= 3
+      ? `<span class="inline-flex items-center gap-1 text-primary text-[12px] font-semibold"><span class="material-symbols-outlined text-[16px]" style="font-variation-settings:'FILL' 1">verified</span>多源印证</span>`
+      : "";
+    const note = (l.distinct_sources || 0) >= 2
+      ? "多个独立来源同时指向同一落地动作，可信度高。"
+      : "目前仅单一来源，建议人工核实或等待更多信号印证。";
+    return `
+    <div class="px-margin-mobile py-5 border-b-hairline">
+      <div class="flex justify-between items-center mb-3">
+        <span class="text-body-lg font-semibold">${l.distinct_sources || 0} 个独立信源印证</span>${seal}
+      </div>
+      <div class="flex flex-wrap gap-2 mb-3">${badges || '<span class="text-rock text-body-md">暂无信源</span>'}</div>
+      <p class="text-body-md text-rock leading-relaxed">${note}</p>
+    </div>`;
+  }
+
+  function facts(l) {
+    const rows = [
+      ["预计投资", yi(l.max_amount_wan) || "—"],
+      ["落地地点", l.top_location || "—"],
+      ["最新动态", l.last_active || "—"],
+      ["首次出现", l.first_seen || "—"],
+      ["联系方式", l.contact_public ? l.contact_public + "（工商公开）" : "待补全"],
+      ["关联信号", `${l.signal_count || 0} 条`],
+    ];
+    return `
+    <div class="px-margin-mobile py-6 border-b-hairline">
+      <div class="text-[11px] font-label-caps text-rock mb-4">核心事实</div>
+      <div class="grid grid-cols-2 gap-y-5 gap-x-4">
+        ${rows.map(([k, v]) => `<div><div class="text-[11px] text-rock mb-1">${k}</div>
+          <div class="text-body-lg ${k === "预计投资" ? "font-data-mono font-bold text-primary" : "text-on-surface"}">${v}</div></div>`).join("")}
+      </div>
+    </div>`;
+  }
+
+  function timeline(signals) {
+    const nodes = signals.map(s => {
+      const src = SOURCE_LABEL[s.source_type] || { t: s.source_type, icon: "description" };
+      const tint = SOURCE_TINT[s.source_type] || "bg-surface-variant text-rock";
+      const meta = [s.industry, s.location_city, yi(s.amount_wan)].filter(Boolean).join(" · ");
+      return `
+      <div class="relative pl-6 pb-6 border-l-2 border-outline-variant last:border-transparent">
+        <div class="absolute -left-[7px] top-1 w-3 h-3 rounded-full bg-primary border-2 border-surface"></div>
+        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+          <span class="px-2 py-0.5 rounded-md text-[11px] inline-flex items-center gap-1 ${tint}"><span class="material-symbols-outlined text-[13px]">${src.icon}</span>${src.t}</span>
+          ${s.event_type ? `<span class="px-2 py-0.5 rounded-md text-[11px] bg-primary-soft text-primary">${s.event_type}</span>` : ""}
+        </div>
+        <p class="text-body-md text-on-surface leading-relaxed mb-1">${s.title || "(无标题)"}</p>
+        ${meta ? `<p class="text-[12px] text-rock mb-1">${meta}</p>` : ""}
+        <div class="flex items-center justify-between">
+          <span class="font-data-mono text-[12px] text-rock">${s.published_at || ""}</span>
+          ${s.source_url ? `<a href="${s.source_url}" target="_blank" class="text-[12px] text-primary font-medium">查看原文 →</a>` : ""}
+        </div>
+      </div>`;
+    }).join("");
+    return `<div class="px-margin-mobile py-6"><div class="text-[11px] font-label-caps text-rock mb-5">情报时间轴</div>${nodes || '<p class="text-rock text-body-md">暂无信号</p>'}</div>`;
+  }
+
+  function refreshFollowBtn() {
+    const b = document.getElementById("followBtn"); if (!b || !window.__lead) return;
+    const on = isWatched(window.__lead.company_key);
+    b.textContent = on ? "已在跟进 ✓" : "加入跟进";
+    b.className = `flex-1 py-3.5 rounded-xl text-body-md font-semibold ${on ? "bg-jade text-white" : "bg-primary text-white"}`;
+  }
+  function follow() { if (window.__lead) { toggleWatch(window.__lead); refreshFollowBtn(); } }
+
+  (async () => {
+    try {
+      const { lead, signals } = await fetchLeadBundle(key);
+      if (!lead) { document.getElementById("state").textContent = "未找到该企业。"; return; }
+      document.title = `先机 · ${lead.company_name}`;
+      document.getElementById("root").innerHTML = hero(lead) + verification(lead, signals) + facts(lead) + timeline(signals);
+      window.__lead = lead; refreshFollowBtn();
+    } catch (e) { document.getElementById("state").textContent = "读取失败：" + e.message; }
+  })();
+</script>
+
+<!-- 底部操作条 -->
+<div class="fixed bottom-0 left-0 w-full z-50 flex justify-center bg-transparent pointer-events-none">
+  <div class="w-full max-w-[480px] bg-surface border-t-hairline px-margin-mobile py-3 flex gap-3 pointer-events-auto" style="padding-bottom:max(12px,env(safe-area-inset-bottom))">
+    <button onclick="if(navigator.share&&window.__lead)navigator.share({title:window.__lead.company_name,url:location.href})" class="flex-1 py-3.5 rounded-xl border border-ink text-ink text-body-md font-semibold">导出 / 分享</button>
+    <button id="followBtn" onclick="follow()" class="flex-1 py-3.5 rounded-xl bg-primary text-white text-body-md font-semibold">加入跟进</button>
+  </div>
+</div>
+</body>
+</html>

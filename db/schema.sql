@@ -8,7 +8,7 @@ create table if not exists signals (
   signal_id        bigint generated always as identity primary key,
   source_type      text not null
                    check (source_type in
-                     ('listed_announce','invest_record','tender','news','qualification','gov_project')),
+                     ('listed_announce','invest_record','tender','news','qualification','gov_project','eia')),
   source_url       text not null,
   source_hash      text not null unique,        -- md5(source_url)，主去重键
   doc_fingerprint  text,                        -- 内容指纹，防转载灌水(同新闻多站转载)

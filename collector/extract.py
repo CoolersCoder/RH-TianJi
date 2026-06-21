@@ -56,7 +56,16 @@ def extract_event(text: str):
     return None
 
 
+# 公告里的样板词会造成假地域命中(如"上海证券交易所"→误判落地上海)，先剔除。
+_LOC_NOISE = [
+    "上海证券交易所", "深圳证券交易所", "北京证券交易所",
+    "上海证券", "上交所", "深交所", "北交所", "上海清算所",
+]
+
+
 def extract_location(text: str):
+    for noise in _LOC_NOISE:
+        text = text.replace(noise, "")
     for city in CHANGSANJIAO_CITIES:
         if city in text:
             return _CITY_TO_PROV.get(city, ""), city
@@ -81,12 +90,19 @@ def normalize_company(name: str) -> str:
 
 def build_signal(item: dict) -> dict:
     """把一条源数据组装成 signals 表的一行。"""
-    text = f"{item.get('title','')} {item.get('company_name_raw','')}"
-    prov, city = extract_location(text)
+    title = item.get("title", "")
     raw_name = item.get("company_name_raw", "")
+    text = f"{title} {raw_name}"
     if not raw_name:
         m = _COMPANY.search(text)
         raw_name = m.group(0) if m else ""
+    # 地域优先取企业名里的城市(最可靠，如"宿迁联盛"→宿迁)；名里没有再看标题；
+    # 还没有就用源带的省份提示(如政府采购按省检索时已知省份)。
+    prov, city = extract_location(raw_name)
+    if not prov:
+        prov, city = extract_location(title)
+    if not prov and item.get("province"):
+        prov = item["province"]
     return {
         "source_type": item["source_type"],
         "source_url": item["source_url"],
@@ -94,7 +110,8 @@ def build_signal(item: dict) -> dict:
         "doc_fingerprint": md5(item.get("title", "")[:80]),
         "company_name_raw": raw_name,
         "company_key": normalize_company(raw_name),
-        "event_type": extract_event(text),
+        # 源可显式给 event_type(如环评公示);没给才从标题正则推断
+        "event_type": item.get("event_type") or extract_event(text),
         "amount_wan": extract_amount_wan(text),
         "location_prov": prov or None,
         "location_city": city or None,
@@ -107,8 +124,13 @@ def build_signal(item: dict) -> dict:
 
 
 def in_scope(sig: dict) -> bool:
-    """长三角 + 新能源/新材料 过滤。地域或行业有一个命中就先收，宁多勿漏。"""
-    has_company = bool(sig.get("company_key"))
+    """招商是地域性工作：必须命中长三角地域，行业(新能源/新材料)作为加分标签。
+
+    代价：标题里没提城市的长三角企业(如恒逸石化)会被漏掉——这是免费模式没有
+    「企业→注册地」映射的固有局限，Phase 2 接实体归一后可召回。宁缺毋滥优先。
+    """
+    name = sig.get("company_key") or ""
+    # 含数字的简称基本是债券/特殊证券(如"23浙建02")，不是企业主体，剔除。
+    has_company = bool(name) and not any(ch.isdigit() for ch in name)
     geo = bool(sig.get("location_prov"))
-    ind = bool(sig.get("industry"))
-    return has_company and (geo or ind)
+    return has_company and geo

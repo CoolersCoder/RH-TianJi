@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#f2f4f7"/>
+<title>先机 · 线索</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="theme.css"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"/>
+</head>
+<body class="bg-background text-on-surface antialiased pb-28">
+<div class="max-w-[480px] mx-auto w-full min-h-screen">
+
+  <!-- 顶部：标题 + 搜索/范围 -->
+  <header class="px-margin-mobile pt-7 pb-3">
+    <div class="flex justify-between items-center">
+      <h1 class="font-display-lg text-on-surface">线索</h1>
+      <div class="flex items-center gap-2">
+        <button onclick="location.href='search.html'" class="w-10 h-10 rounded-full bg-surface border-hairline flex items-center justify-center text-rock"><span class="material-symbols-outlined text-[20px]">search</span></button>
+        <button onclick="location.href='settings.html'" class="h-10 px-3 rounded-full bg-surface border-hairline flex items-center gap-1 text-rock"><span class="material-symbols-outlined text-[18px]">tune</span><span class="text-[11px] font-label-caps">沪苏浙皖</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="px-margin-mobile">
+    <!-- 筛选胶囊 -->
+    <div id="chips" class="flex overflow-x-auto pb-3 gap-2 scrollbar-hide -mx-margin-mobile px-margin-mobile"></div>
+    <!-- 更新提示 -->
+    <div class="flex items-center gap-1.5 mb-4 text-rock">
+      <span class="w-1.5 h-1.5 rounded-full bg-jade"></span>
+      <span class="text-[11px] font-label-caps tracking-widest">每天 09:00 更新</span>
+    </div>
+    <!-- 线索流(动态) -->
+    <div id="feed" class="flex flex-col gap-3"></div>
+    <div id="state" class="text-center text-rock py-16 text-body-md"></div>
+  </main>
+</div>
+
+<div id="nav"></div>
+
+<script src="data.js"></script>
+<script>
+  const FILTERS = [
+    { label: "全部", f: {} },
+    { label: "高置信", f: { minScore: 70 } },
+    { label: "新能源", f: { industry: "新能源" } },
+    { label: "新材料", f: { industry: "新材料" } },
+    { label: "最新", f: { sort: "latest" } },
+  ];
+  let active = 0;
+
+  function renderChips() {
+    document.getElementById("chips").innerHTML = FILTERS.map((c, i) =>
+      `<button onclick="select(${i})" class="flex-shrink-0 px-4 py-2 rounded-full text-[13px] font-medium transition-colors ${
+        i === active ? "bg-ink text-white" : "bg-surface text-on-surface border-hairline"
+      }">${c.label}</button>`
+    ).join("");
+  }
+  async function load() {
+    const feed = document.getElementById("feed"), state = document.getElementById("state");
+    feed.innerHTML = ""; state.textContent = "加载中…";
+    try {
+      const leads = await fetchLeads(FILTERS[active].f);
+      if (!leads.length) { state.textContent = "还没有命中你关注范围的线索。换个筛选，或等明天 09:00 的更新。"; return; }
+      state.textContent = "";
+      feed.innerHTML = leads.map(leadCardHTML).join("");
+    } catch (e) { state.textContent = "读取失败：" + e.message; }
+  }
+  function select(i) { active = i; renderChips(); load(); }
+  document.getElementById("nav").innerHTML = bottomNav("index.html");
+  renderChips(); load();
+</script>
+</body>
+</html>

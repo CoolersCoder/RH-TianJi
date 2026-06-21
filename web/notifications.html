@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#f2f4f7"/>
+<title>先机 · 通知</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="theme.css"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"/>
+</head>
+<body class="bg-background text-on-surface antialiased pb-12">
+<div class="max-w-[480px] mx-auto w-full min-h-screen">
+
+  <header class="grid grid-cols-[40px_1fr_40px] items-center px-margin-mobile pt-5 pb-3">
+    <button onclick="history.back()" class="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-rock"><span class="material-symbols-outlined">arrow_back</span></button>
+    <h1 class="font-headline-sm font-semibold text-on-surface text-center">通知中心</h1>
+    <span></span>
+  </header>
+
+  <main class="px-margin-mobile">
+    <div id="list" class="flex flex-col gap-2.5"></div>
+    <div id="state" class="text-center text-rock py-16 text-body-md leading-relaxed"></div>
+  </main>
+</div>
+
+<script src="data.js"></script>
+<script>
+  // 通知由数据派生：高置信线索 + 近 7 天新出现的线索(真实，不编造)
+  (async () => {
+    const list = document.getElementById("list"), state = document.getElementById("state");
+    try {
+      const leads = await fetchLeads({});
+      const weekAgo = Date.now() - 7 * 86400000;
+      const items = [];
+      leads.filter(l => l.intent_score >= 70).forEach(l =>
+        items.push(["primary", `新增高置信线索：${l.company_name}`, l.last_active || "今天", l]));
+      leads.filter(l => l.first_seen && new Date(l.first_seen).getTime() >= weekAgo).slice(0, 20).forEach(l =>
+        items.push([scoreMeta(l.intent_score).color, `新线索：${l.company_name}${l.top_location ? " · " + l.top_location : ""}`, l.first_seen || "", l]));
+      if (!items.length) { state.innerHTML = "暂无新通知。<br>出现高置信线索时会第一时间提醒你。"; return; }
+      list.innerHTML = items.map(([color, text, time, l]) => {
+        const m = scoreMeta(l.intent_score);
+        return `<a href="lead.html?key=${encodeURIComponent(l.company_key)}" class="bg-surface border-hairline card-soft rounded-2xl flex items-center gap-3 p-4">
+          <span class="w-2 h-2 rounded-full bg-${color} flex-shrink-0"></span>
+          <div class="flex-grow min-w-0">
+            <div class="text-body-md text-on-surface truncate">${text}</div>
+            <div class="font-label-caps text-rock/70 mt-1">${timeAgo(time)}</div>
+          </div>
+          <span class="font-data-mono text-[20px] font-bold text-${m.color} flex-shrink-0">${l.intent_score}</span>
+        </a>`;
+      }).join("");
+    } catch (e) { state.textContent = "读取失败：" + e.message; }
+  })();
+</script>
+</body>
+</html>

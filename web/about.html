@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#f2f4f7"/>
+<title>先机 · 数据来源与合规</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="theme.css"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"/>
+</head>
+<body class="bg-background text-on-surface antialiased pb-12">
+<div class="max-w-[480px] mx-auto w-full min-h-screen">
+
+  <header class="grid grid-cols-[40px_1fr_40px] items-center px-margin-mobile pt-5 pb-3">
+    <button onclick="history.back()" class="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-rock"><span class="material-symbols-outlined">arrow_back</span></button>
+    <h1 class="text-center font-headline-sm font-semibold text-on-surface">数据来源与合规</h1>
+    <span></span>
+  </header>
+
+  <main class="px-margin-mobile flex flex-col gap-7 pt-3">
+    <section>
+      <div class="text-[11px] font-label-caps text-rock mb-3">数据来源</div>
+      <div id="sources" class="flex flex-col gap-3"></div>
+    </section>
+    <section>
+      <div class="text-[11px] font-label-caps text-rock mb-3">合规承诺</div>
+      <div class="bg-surface border-hairline card-soft rounded-2xl p-4 flex flex-col gap-4" id="compliance"></div>
+      <p class="text-[12px] text-rock mt-4 leading-relaxed px-1">先机仅整理已公开的企业信息用于招商研判；每条线索均保留原文出处，可追溯、可核验。</p>
+    </section>
+  </main>
+</div>
+
+<script>
+  const SOURCES = [
+    ["上市公司公告", "巨潮资讯网 · 对外投资 / 新建项目 / 扩产等披露", "description", "已接入", "jade"],
+    ["环评公示", "省级生态环境厅 · 新建/扩建项目受理与审批公示(领先信号)", "eco", "Phase 2", "rock"],
+    ["招标公告", "公共资源交易 / 政府采购 · 建厂房 / 购设备等落地招标", "gavel", "Phase 2", "rock"],
+    ["投资项目备案", "投资项目在线审批监管平台 · 备案公示", "verified", "Phase 2", "rock"],
+    ["公开新闻", "选址 / 签约 / 落户报道", "newspaper", "Phase 3", "rock"],
+  ];
+  const COMPLIANCE = [
+    "只采集公开信息，不含个人手机号、私人邮箱等隐私字段",
+    "仅保留工商公开联系方式，并标注来源",
+    "礼貌抓取：限频、错峰，遵守网站规则，不破解反爬",
+    "每条线索保留原文链接，结论可一键溯源",
+  ];
+  document.getElementById("sources").innerHTML = SOURCES.map(([t, d, icon, tag, c]) => `
+    <div class="bg-surface border-hairline card-soft rounded-2xl p-4 flex items-start gap-3">
+      <span class="material-symbols-outlined text-jade mt-0.5">${icon}</span>
+      <div class="flex-grow min-w-0">
+        <div class="flex items-center gap-2 flex-wrap"><span class="text-body-lg font-semibold">${t}</span>
+          <span class="text-[11px] px-2 py-0.5 rounded-md ${tag === "已接入" ? "bg-jade-soft text-jade" : "bg-surface-variant text-rock"}">${tag}</span></div>
+        <p class="text-body-md text-rock mt-1">${d}</p>
+      </div>
+    </div>`).join("");
+  document.getElementById("compliance").innerHTML = COMPLIANCE.map(c => `
+    <div class="flex items-start gap-3">
+      <span class="material-symbols-outlined text-jade text-[20px]" style="font-variation-settings:'FILL' 1;">check_circle</span>
+      <span class="text-body-md text-on-surface leading-relaxed">${c}</span>
+    </div>`).join("");
+</script>
+</body>
+</html>

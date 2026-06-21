@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#f2f4f7"/>
+<title>先机 · 态势</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="theme.css"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"/>
+</head>
+<body class="bg-background text-on-surface antialiased pb-28">
+<div class="max-w-[480px] mx-auto w-full min-h-screen">
+
+  <header class="px-margin-mobile pt-7 pb-3">
+    <h1 class="font-display-lg text-on-surface">态势</h1>
+  </header>
+
+  <main class="px-margin-mobile flex flex-col gap-7">
+    <!-- 指标卡 2×2 -->
+    <div id="tiles" class="grid grid-cols-2 gap-3"></div>
+
+    <!-- 行业分布 -->
+    <section>
+      <div class="text-[11px] font-label-caps text-rock mb-3">行业分布</div>
+      <div class="bg-surface border-hairline card-soft rounded-2xl p-4 flex flex-col gap-3" id="byIndustry"></div>
+    </section>
+
+    <!-- 省份分布 -->
+    <section>
+      <div class="text-[11px] font-label-caps text-rock mb-3">省份分布</div>
+      <div class="bg-surface border-hairline card-soft rounded-2xl p-4" id="byProvince"></div>
+    </section>
+
+    <!-- 近 30 天新增趋势 -->
+    <section>
+      <div class="text-[11px] font-label-caps text-rock mb-3">近 30 天新增趋势</div>
+      <div class="bg-surface border-hairline card-soft rounded-2xl p-4" id="trend"></div>
+    </section>
+
+    <!-- 今日值得看 -->
+    <section>
+      <div class="text-[11px] font-label-caps text-rock mb-3">今日值得看 · 意向分最高</div>
+      <div class="bg-surface border-hairline card-soft rounded-2xl divide-y divide-[#e2e6eb]" id="movers"></div>
+    </section>
+
+    <div id="state" class="text-center text-rock py-8 text-body-md"></div>
+  </main>
+</div>
+<div id="nav"></div>
+
+<script src="data.js"></script>
+<script>
+  document.getElementById("nav").innerHTML = bottomNav("situation.html");
+
+  function tile(n, label, color) {
+    return `<div class="bg-surface border-hairline card-soft rounded-2xl p-4">
+      <div class="text-[11px] font-label-caps text-rock">${label}</div>
+      <div class="font-data-mono text-[30px] font-bold leading-none mt-2 text-${color}">${n}</div>
+    </div>`;
+  }
+  // 行业横条
+  function hbar(label, n, max) {
+    const pct = max ? Math.round(n / max * 100) : 0;
+    return `<div>
+      <div class="flex justify-between items-baseline text-[13px] mb-1.5"><span class="text-on-surface">${label}</span><span class="font-data-mono text-rock">${n}</span></div>
+      <div class="h-2 bg-surface-variant rounded-full overflow-hidden"><div class="h-full bg-ink rounded-full" style="width:${pct}%"></div></div>
+    </div>`;
+  }
+  // 省份竖条
+  function vbars(rows) {
+    const max = Math.max(...rows.map(r => r[1]), 1);
+    return `<div class="flex items-end justify-around gap-2 h-[120px] pt-2">${
+      rows.map(([k, n]) => {
+        const h = Math.max(6, Math.round(n / max * 84));
+        return `<div class="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+          <span class="font-data-mono text-[12px] text-on-surface">${n}</span>
+          <div class="w-7 rounded-md bg-primary" style="height:${h}px"></div>
+          <span class="text-[11px] text-rock truncate w-full text-center">${k}</span>
+        </div>`;
+      }).join("")
+    }</div>`;
+  }
+  // 30 天折线(SVG)
+  function lineChart(counts) {
+    const W = 400, H = 96, n = counts.length, max = Math.max(...counts, 1);
+    const pts = counts.map((c, i) => {
+      const x = n > 1 ? (i / (n - 1)) * W : 0;
+      const y = H - 10 - (c / max) * (H - 20);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(" ");
+    const grid = [0.25, 0.5, 0.75].map(g =>
+      `<line x1="0" y1="${(H * g).toFixed(0)}" x2="${W}" y2="${(H * g).toFixed(0)}" stroke="#e2e6eb" stroke-dasharray="3 4" stroke-width="1"/>`
+    ).join("");
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" class="w-full" style="height:96px">
+      ${grid}
+      <polyline fill="none" stroke="#11161c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${pts}"/>
+    </svg>
+    <div class="flex justify-between text-[10px] font-label-caps text-rock mt-2"><span>30 天前</span><span>今天</span></div>`;
+  }
+  function group(leads, field) {
+    const m = {}; leads.forEach(l => { const k = l[field] || "未标注"; m[k] = (m[k] || 0) + 1; });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  }
+  function moverRow(l, i) {
+    const m = scoreMeta(l.intent_score);
+    return `<div onclick="location.href='lead.html?key=${encodeURIComponent(l.company_key)}'" class="flex items-center gap-3 p-4 cursor-pointer">
+      <span class="font-data-mono text-[13px] text-rock w-5 flex-shrink-0">${String(i + 1).padStart(2, "0")}</span>
+      <div class="flex-1 min-w-0">
+        <div class="font-headline-sm font-semibold text-on-surface truncate">${l.company_name}</div>
+        <div class="text-[12px] text-rock truncate">${[l.top_location, l.top_industry].filter(Boolean).join(" · ")}</div>
+      </div>
+      <span class="font-data-mono text-[20px] font-bold text-${m.color} flex-shrink-0">${l.intent_score}</span>
+    </div>`;
+  }
+
+  (async () => {
+    try {
+      const leads = await fetchLeads({});
+      if (!leads.length) { document.getElementById("state").textContent = "暂无数据。"; return; }
+      const now = Date.now(), DAY = 86400000;
+      const recent = leads.filter(l => l.first_seen && now - new Date(l.first_seen).getTime() <= 7 * DAY).length;
+      const hi = leads.filter(l => l.intent_score >= 70).length;
+      const cities = new Set(leads.map(l => l.top_location).filter(Boolean)).size;
+      document.getElementById("tiles").innerHTML =
+        tile(leads.length, "在追线索", "ink") + tile(recent, "本周新增", "jade") +
+        tile(hi, "高置信", "primary") + tile(cities, "覆盖城市", "ink");
+
+      const ind = group(leads, "top_industry");
+      // 省份分布:把市级 top_location(常州/淮安…)归并到省再统计
+      const provMap = {};
+      leads.forEach(l => { const p = provinceOf(l.top_location); provMap[p] = (provMap[p] || 0) + 1; });
+      const prov = Object.entries(provMap).sort((a, b) => b[1] - a[1]);
+      const maxI = Math.max(...ind.map(x => x[1]), 1);
+      document.getElementById("byIndustry").innerHTML = ind.slice(0, 5).map(([k, n]) => hbar(k, n, maxI)).join("");
+      document.getElementById("byProvince").innerHTML = vbars(prov.slice(0, 5));
+
+      // 近 30 天每日新增
+      const counts = new Array(30).fill(0);
+      leads.forEach(l => {
+        if (!l.first_seen) return;
+        const d = Math.floor((now - new Date(l.first_seen).getTime()) / DAY);
+        if (d >= 0 && d < 30) counts[29 - d]++;
+      });
+      document.getElementById("trend").innerHTML = lineChart(counts);
+
+      document.getElementById("movers").innerHTML =
+        leads.slice(0, 3).map((l, i) => moverRow(l, i)).join("");
+    } catch (e) { document.getElementById("state").textContent = "读取失败：" + e.message; }
+  })();
+</script>
+</body>
+</html>
