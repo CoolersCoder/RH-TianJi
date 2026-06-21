@@ -137,12 +137,12 @@ TENDER_SEARCH_KEYWORDS = ["新能源", "新材料", "锂电", "光伏", "储能"
 ENABLE_EIA = True
 EIA_MAX_PAGES = 3                  # 每个公示阶段翻几页(按时效,前几页即最新)
 
-# ── 礼貌采集：慢、随机、低量、低频(不需要实时，几小时/一天一次足矣) ──
-REQUEST_MIN_DELAY = 8.0            # 每请求/关键词之间最少停(秒)
-REQUEST_MAX_DELAY = 22.0           # 最多停
-LONG_REST_PROB = 0.20             # 偶尔(20%概率)额外多歇，让节奏不规律
-LONG_REST_RANGE = (40.0, 90.0)
-SOURCE_PAUSE_RANGE = (30.0, 75.0)  # 不同数据源之间停得更久
+# ── 礼貌采集：温和但不拖沓(每天一次、低量,这个强度对站点依然友好) ──
+REQUEST_MIN_DELAY = 3.0            # 每请求/关键词之间最少停(秒)
+REQUEST_MAX_DELAY = 8.0            # 最多停
+LONG_REST_PROB = 0.05             # 偶尔(5%)小幅多歇,保留一点节奏不规律
+LONG_REST_RANGE = (12.0, 25.0)
+SOURCE_PAUSE_RANGE = (10.0, 22.0)  # 不同数据源之间停久一点
 MAX_PAGES_PER_KEYWORD = 2         # 每关键词翻页数(压低请求量)
 LOOKBACK_DAYS = 120               # 只看最近多少天
 
