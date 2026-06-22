@@ -43,11 +43,11 @@
 
 <script src="data.js"></script>
 <script>
-  const FILTERS = [
+  // 行业筛选不再写死:进页时从实际线索里取出现过的行业(按 INDUSTRIES 规范顺序),
+  // 后端新增行业(含传统行业)会自动出现在这里,空行业不显示。
+  let FILTERS = [
     { label: "全部", f: {} },
     { label: "高置信", f: { minScore: 70 } },
-    { label: "新能源", f: { industry: "新能源" } },
-    { label: "新材料", f: { industry: "新材料" } },
     { label: "最新", f: { sort: "latest" } },
   ];
   let active = 0;
@@ -71,7 +71,18 @@
   }
   function select(i) { active = i; renderChips(); load(); }
   document.getElementById("nav").innerHTML = bottomNav("index.html");
-  renderChips(); load();
+
+  async function init() {
+    try {
+      const all = await fetchLeads({});               // 取全量,发现实际出现的行业
+      const present = new Set(all.map(l => l.top_industry).filter(Boolean));
+      const indChips = INDUSTRIES.filter(x => present.has(x)).map(x => ({ label: x, f: { industry: x } }));
+      // 行业插在「高置信」之后、「最新」之前
+      FILTERS = [FILTERS[0], FILTERS[1], ...indChips, FILTERS[2]];
+    } catch (e) { /* 取不到就用默认三项,不阻塞 */ }
+    renderChips(); load();
+  }
+  init();
 </script>
 </body>
 </html>

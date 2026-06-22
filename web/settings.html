@@ -72,8 +72,12 @@
       oninput="document.getElementById('tv').textContent=this.value;this.style.setProperty('--p',((this.value-40)/50*100)+'%');localStorage.setItem('${THRESH_KEY}',this.value)"/>
   </div>`;
 
+  // 关注范围回显已存偏好(onboarding 写入 xianji_prefs);没设过就显示放开后的默认范围
+  const _prefs = (() => { try { return JSON.parse(localStorage.getItem("xianji_prefs")) || {}; } catch (e) { return {}; } })();
+  const _summary = (arr, dft) => (arr && arr.length) ? (arr.length > 4 ? arr.slice(0, 4).join(" · ") + ` 等${arr.length}项` : arr.join(" · ")) : dft;
+
   document.getElementById("groups").innerHTML =
-    group("关注范围", navRow("关注省份", "沪 · 苏 · 浙 · 皖", "onboarding.html") + navRow("关注行业", "新能源 · 新材料", "onboarding.html")) +
+    group("关注范围", navRow("关注省份", _summary(_prefs.prov, "全国"), "onboarding.html") + navRow("关注行业", _summary(_prefs.ind, "全部行业"), "onboarding.html")) +
     group("推送规则", toggleRow("a", "高置信即时提醒", true) + toggleRow("b", "每日早报 (09:00)", true) + threshRow + navRow("查看通知中心", "", "notifications.html")) +
     group("数据 · 账号",
       navRow("数据来源与合规", "", "about.html") +

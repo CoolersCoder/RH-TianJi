@@ -61,12 +61,20 @@ const SOURCE_LABEL = {
   qualification:   { t: "资质",     icon: "workspace_premium" },
   gov_project:     { t: "政府项目", icon: "account_balance" },
 };
-function industryIcon(ind) {
-  if (ind === "新能源") return "factory";
-  if (ind === "新材料") return "science";
-  if (ind === "医药") return "medical_services";
-  return "business";
-}
+// 行业全集(顺序对齐 collector/config.py 的 INDUSTRY_KEYWORDS:高新 10 类 + 传统 4 类)。
+// 这是前端的「唯一真源」——筛选/引导/设置都用它,后端再加行业只改这一处。
+const INDUSTRIES = [
+  "半导体", "新能源", "新材料", "智能汽车", "高端装备", "人工智能", "生物医药",
+  "商业航天", "数字经济", "节能环保",
+  "机械装备", "基础原材料", "消费品轻工", "传统汽车物流",
+];
+const INDUSTRY_ICON = {
+  "半导体": "memory", "新能源": "bolt", "新材料": "science", "智能汽车": "directions_car",
+  "高端装备": "precision_manufacturing", "人工智能": "smart_toy", "生物医药": "medical_services",
+  "商业航天": "rocket_launch", "数字经济": "hub", "节能环保": "eco",
+  "机械装备": "build", "基础原材料": "oil_barrel", "消费品轻工": "shopping_bag", "传统汽车物流": "local_shipping",
+};
+function industryIcon(ind) { return INDUSTRY_ICON[ind] || "business"; }
 function yi(wan) { return wan ? `${(wan / 10000).toFixed(wan % 10000 ? 1 : 0)}亿` : null; }
 
 function timeAgo(dateStr) {
