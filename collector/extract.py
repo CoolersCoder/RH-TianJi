@@ -121,14 +121,15 @@ def build_signal(item: dict) -> dict:
 
 
 def in_scope(sig: dict) -> bool:
-    """全国 + 高新技术:命中高新技术行业 = 入库闸门(只收高新科技,滤掉房地产/基建/传统贸易);
+    """全国 + 目标行业:命中 INDUSTRY_KEYWORDS 任一行业 = 入库闸门
+    (高新技术全领域 + 选定传统行业;滤掉房地产/纯贸易/政务杂讯);
     地域全国一视同仁,只作标签不再作闸门。
 
-    代价：标题/企业名里没出现行业关键词的真高新企业会被漏(免费模式无「企业→行业」库),
+    代价：标题/企业名里没出现行业关键词的真目标企业会被漏(免费模式无「企业→行业」库),
     宁缺毋滥优先；待接实体/行业归一后可召回。
     """
     name = sig.get("company_key") or ""
     # 含数字的简称基本是债券/特殊证券(如"23浙建02")，不是企业主体，剔除。
     has_company = bool(name) and not any(ch.isdigit() for ch in name)
-    is_hightech = sig.get("industry") is not None
-    return has_company and is_hightech
+    in_target_industry = sig.get("industry") is not None
+    return has_company and in_target_industry
